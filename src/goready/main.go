@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/hoisie/web"
-	"code.google.com/p/go.net/websocket"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -36,6 +35,19 @@ func GetDeployments(ctx *web.Context) {
 	ctx.Write(b)
 }
 
+func GetStatusUpdates(ctx *web.Context) {
+	deployments := []*Deployment{
+		&Deployment{"Testna", "Testna postavitev", "localhost", "127.0.0.1", "AAABBB", ""},
+		&Deployment{"Druga", "Druga testna postavitev", "localhost", "127.0.0.1", "CCCDDD", ""},
+		&Deployment{"Beta staging", "Beta staging server", "localhost", "127.0.0.1", "CCCDDD", ""},
+	}
+	b, err := json.Marshal(deployments)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	ctx.ContentType("json")
+	ctx.Write(b)
+}
 func GetIndex(ctx *web.Context) {
 	t, _ := template.ParseFiles("static/index.html")
 	t.Execute(ctx.ResponseWriter, nil)
@@ -65,6 +77,7 @@ func main() {
 	web.Get("/static", http.FileServer(http.Dir("static")))
 	web.Get("/ws", websocket.Handler(wsHandler))
 	web.Get("/", GetIndex)
+	web.Get("/status", GetStatusUpdates)
 	web.Get("/deployments", GetDeployments)
 	web.Run("0.0.0.0:9999")
 }
