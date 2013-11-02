@@ -1,0 +1,4 @@
+export OLD_GOPATH=$GOPATH
+export GOPATH=`pwd`
+export OLD_PROMPT=$PROMPT
+export PROMPT="$PROMPT (goready) "

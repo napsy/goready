@@ -1,0 +1,2 @@
+github.com/hoisie/web
+code.google.com/p/go.net/websocket

@@ -1,0 +1,2 @@
+export GOPATH=$OLD_GOPATH
+export PROMPT=$OLD_PROMPT

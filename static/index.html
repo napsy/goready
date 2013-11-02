@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+
+<script src="http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js"></script>
+<script src="http://jquery-websocket.googlecode.com/files/jquery.websocket-0.0.1.js"></script>
+
+
+<script type="text/javascript">
+function GetDeployments() {
+	$.ajax({ 
+		type: "GET",
+		dataType: "json",
+		url: "/deployments",
+		success: function(data) {
+			GenerateTable(data);
+		}
+	});
+}
+
+function StatusUpdater() {
+	$.ajax({ 
+		type: "GET",
+		dataType: "json",
+		url: "/status",
+		success: function(data) {
+			GenerateTable(data);
+		}
+	});
+}
+
+function UpgradeRequest(name) {
+	var idName = name.replace(/ /g,"_");
+	var idStatus = "#"+ idName + "-status";
+	var idVersion= "#"+ idName + "-version";
+	var statusMsg = "";
+	var statusType = "";
+	var ws = $.websocket("ws://127.0.0.1:9999/ws", {
+        events: {
+                message: function(e) {
+
+			if (e.data == "OK") {
+				statusType = "label-info";
+				statusMsg = "upgrading ...";
+			}
+			if (e.data == "FAIL") {
+				statusType = "label-warning";
+				statusMsg = "failed ...";
+			}
+			if (e.data == "DONE") {
+				statusType = "label-success";
+				statusMsg = "operational";
+			}
+			newStatusLabel = '<span class="label ' + statusType + '">' + statusMsg + '</span>'
+			newVersionLabel = '1.5.0'
+			$(idStatus).html(newStatusLabel);
+			$(idVersion).html(newVersionLabel);
+                }
+        }
+});
+	if(ws.readyState == 1) {
+		webSocket.send('some data');
+	}
+	else {
+		ws.onopen = function(e){
+			ws.send('operation',{Name : name, Operation : 'upgrade'});
+		}
+	}
+}
+
+function RemoveRequest(name) {
+	console.log("Removing " + name);
+}
+
+function ConfigRequest(name) {
+	var idName = name.replace(/ /g,"_");
+	console.log("Configuring " + name);
+}
+
+function GenerateTable(data) {
+	var table = $('<table class="table table-hover"></table>').addClass('foo');
+	for (var i in data) {
+		var name = data[i]["Name"];
+		var idName = name.replace(/ /g,"_");
+		var description = data[i]["Description"];
+
+		row = $('<tr id="' + idName + '"></tr>');
+		var rowDescription = $('<td></td>').addClass('bar').text(description);
+		var checkName = $('<label><input type="checkbox"> '+data[i]["Name"] + ' </label>');
+		var rowName = $('<td></td>').addClass('bar').append(checkName);
+		var rowStatus = $('<td id="' + idName+ '-status"></td>').addClass('bar').append($('<span class="label label-success">operational</span>'));
+		var rowVersion = $('<td id="' + idName + '-version"></td>').addClass('bar').text('1.2.2');
+		var btnUpdate = $('<button type="button" class="btn btn-default" onClick=\'UpgradeRequest("'+ name + '");\'>Upgrade</button>');
+		var btnRemove = $('<button type="button" class="btn btn-default" onClick=\'RemoveRequest("'+ name + '");\'>Remove</button>');
+		var btnConfig = $('<a data-toggle="modal" href="#myModal" class="btn btn-default">Configure</a>');
+
+		var rowOperations = $('<td></td>').addClass('btn-group').append(btnUpdate).append(btnRemove).append(btnConfig);
+		row.append(rowName);
+		row.append(rowDescription);
+		row.append(rowVersion);
+		row.append(rowStatus);
+		row.append(rowOperations);
+		table.append(row);
+	}
+	if ($('table').length) {
+		$("#someContainer tr:first").after(row);
+	}
+	else {
+		$('#someContainer').append(table);
+	}
+}
+$(window).load(function() {
+      GetDeployments();
+});
+</script>
+</head>
+<body class="container">
+<div class="page-header">
+  <h1>Deployment <small>Version management</small></h1>
+</div>
+<p>Below is a list of managable Go projects that are already deployed on remote systems.</p>
+
+<label>Selected operation</label><br>
+<div class="btn-group">
+  <button type="button" class="btn btn-default">Upgrade</button>
+  <button type="button" class="btn btn-default">Remove</button>
+</div>
+<br><br>
+<div class="container" id="someContainer"></div>
+<p>(C) 2013, <a href="#">goready</a> team</p>
+
+  <!-- Modal -->
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Deployment configuration</h4>
+        </div>
+        <div class="modal-body">
+          ...
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save changes</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+
+</body>
+</html>
